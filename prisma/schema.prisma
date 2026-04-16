@@ -1,0 +1,202 @@
+// ============================================================================
+// Jameya Marketplace — Prisma Schema
+// Production-grade database design for collaborative savings groups
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum KycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum SeatStatus {
+  AVAILABLE
+  RESERVED
+  CONFIRMED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum JameyaStatus {
+  DRAFT
+  ACTIVE
+  FULL
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================================================
+// USER
+// ============================================================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String
+  phone         String?
+  kycStatus     KycStatus @default(PENDING)
+  riskScore     Float     @default(50.0) // 0-100 scale, lower = less risky
+  behaviorScore Float     @default(50.0) // 0-100 scale, higher = better
+  isActive      Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reservations Reservation[]
+  payments     Payment[]
+
+  @@index([kycStatus])
+  @@index([riskScore])
+  @@map("users")
+}
+
+// ============================================================================
+// JAMEYA (Savings Group)
+// ============================================================================
+
+model Jameya {
+  id                  String       @id @default(uuid())
+  name                String
+  description         String?
+  monthlyContribution Float        // Monthly payment amount
+  duration            Int          // Duration in months = number of seats
+  currency            String       @default("USD")
+  status              JameyaStatus @default(ACTIVE)
+
+  // Marketplace fields
+  isFeatured     Boolean @default(false)
+  conversionRate Float   @default(0.0) // 0-1 scale
+  totalViews     Int     @default(0)
+  totalBookings  Int     @default(0)
+
+  // Risk tier matching
+  minRiskScore Float @default(0.0)
+  maxRiskScore Float @default(100.0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  seats Seat[]
+
+  @@index([status])
+  @@index([isFeatured])
+  @@index([conversionRate(sort: Desc)])
+  @@map("jameyas")
+}
+
+// ============================================================================
+// SEAT
+// ============================================================================
+
+model Seat {
+  id           String     @id @default(uuid())
+  jameyaId     String
+  seatNumber   Int        // 1-indexed seat position
+  joiningPrice Float      // Price to join this specific seat
+  status       SeatStatus @default(AVAILABLE)
+
+  // Optimistic locking
+  version Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jameya       Jameya        @relation(fields: [jameyaId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+
+  @@unique([jameyaId, seatNumber])
+  @@index([jameyaId, status])
+  @@index([status])
+  @@map("seats")
+}
+
+// ============================================================================
+// RESERVATION
+// ============================================================================
+
+model Reservation {
+  id     String            @id @default(uuid())
+  userId String
+  seatId String
+  status ReservationStatus @default(PENDING)
+
+  // TTL management
+  expiresAt DateTime // When this reservation expires
+  
+  // Idempotency
+  idempotencyKey String @unique
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  confirmedAt DateTime?
+
+  user     User      @relation(fields: [userId], references: [id])
+  seat     Seat      @relation(fields: [seatId], references: [id])
+  payments Payment[]
+
+  @@index([status, expiresAt])
+  @@index([userId])
+  @@index([seatId])
+  @@map("reservations")
+}
+
+// ============================================================================
+// PAYMENT
+// ============================================================================
+
+model Payment {
+  id              String        @id @default(uuid())
+  reservationId   String
+  userId          String
+  amount          Float
+  currency        String        @default("USD")
+  status          PaymentStatus @default(PENDING)
+
+  // Stripe integration
+  stripePaymentIntentId String?  @unique
+  stripeClientSecret    String?
+  
+  // Idempotency for webhook callbacks
+  idempotencyKey        String   @unique
+
+  // Metadata
+  failureReason String?
+  processedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@index([stripePaymentIntentId])
+  @@index([status])
+  @@index([reservationId])
+  @@map("payments")
+}

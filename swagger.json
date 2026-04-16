@@ -1,0 +1,1225 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/users": {
+      "get": {
+        "operationId": "UserController_findAll",
+        "summary": "List all users (paginated)",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of users"
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "operationId": "UserController_findById",
+        "summary": "Get user by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "User UUID",
+            "schema": {
+              "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/{id}/kyc": {
+      "patch": {
+        "operationId": "UserController_updateKyc",
+        "summary": "Update user KYC status",
+        "description": "Updates KYC verification status. Invalidates cached KYC eligibility.",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "User UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateKycDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "KYC status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/{id}/kyc-eligibility": {
+      "get": {
+        "operationId": "UserController_checkKycEligibility",
+        "summary": "Check KYC eligibility for seat reservation",
+        "description": "Checks if the user is eligible to reserve a seat based on their KYC status. Uses cached status (30s TTL).",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "User UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "KYC eligibility result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KycEligibilityResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/jameyas/marketplace": {
+      "get": {
+        "operationId": "JameyaController_getMarketplace",
+        "summary": "Get ranked marketplace listing",
+        "description": "Returns Jameyas ranked by a scoring algorithm that considers:\n      - **Featured boost** (admin-promoted)\n      - **Conversion rate** (historical booking success)\n      - **Urgency factor** (near-full Jameyas ranked higher)\n      - **Personalization** (match to user risk/behavior profile)\n      \n      Results are cached in Redis with a 5-second TTL.\n      Pass `userId` to enable personalized ranking.",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "User ID for personalization",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "featured",
+                "trending",
+                "best_for_you",
+                "newest"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "minContribution",
+            "required": false,
+            "in": "query",
+            "description": "Min monthly contribution",
+            "schema": {
+              "example": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxContribution",
+            "required": false,
+            "in": "query",
+            "description": "Max monthly contribution",
+            "schema": {
+              "example": 1000,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ranked marketplace listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketplaceResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jameyas",
+          "marketplace"
+        ]
+      }
+    },
+    "/api/jameyas": {
+      "get": {
+        "operationId": "JameyaController_findAll",
+        "summary": "List all active Jameyas (paginated)",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated Jameya list"
+          }
+        },
+        "tags": [
+          "jameyas"
+        ]
+      }
+    },
+    "/api/jameyas/{id}": {
+      "get": {
+        "operationId": "JameyaController_findById",
+        "summary": "Get Jameya by ID with seat details and stats",
+        "description": "Returns full Jameya details including all seats and availability statistics. Also increments view count for ranking.",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Jameya UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Jameya with seats and stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JameyaDetailResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Jameya not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jameyas"
+        ]
+      }
+    },
+    "/api/seats/jameya/{jameyaId}": {
+      "get": {
+        "operationId": "SeatController_findByJameya",
+        "summary": "Get all seats for a Jameya",
+        "description": "Returns all seats regardless of status, ordered by seat number.",
+        "parameters": [
+          {
+            "name": "jameyaId",
+            "required": true,
+            "in": "path",
+            "description": "Jameya UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of seats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SeatSummary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "seats"
+        ]
+      }
+    },
+    "/api/seats/jameya/{jameyaId}/available": {
+      "get": {
+        "operationId": "SeatController_getAvailable",
+        "summary": "Get available seats for a Jameya",
+        "description": "Returns only seats with status AVAILABLE. Use this to show bookable seats. Note: slight staleness (~5s) is acceptable.",
+        "parameters": [
+          {
+            "name": "jameyaId",
+            "required": true,
+            "in": "path",
+            "description": "Jameya UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available seats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SeatSummary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "seats"
+        ]
+      }
+    },
+    "/api/seats/{id}": {
+      "get": {
+        "operationId": "SeatController_findById",
+        "summary": "Get seat by ID with Jameya details",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Seat UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Seat details"
+          },
+          "404": {
+            "description": "Seat not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "seats"
+        ]
+      }
+    },
+    "/api/reservations": {
+      "post": {
+        "operationId": "ReservationController_reserveSeat",
+        "summary": "🔒 Reserve a seat (Phase 1 — Temporary Lock)",
+        "description": "**This is the critical Phase 1 of the 2-phase reservation flow.**\n\n### What happens:\n1. Validates user KYC eligibility (cached, 30s TTL)\n2. Acquires Redis distributed lock on the seat\n3. Uses `SELECT FOR UPDATE` for row-level DB lock\n4. Creates a PENDING reservation with TTL (default: 3 minutes)\n5. Creates a Stripe PaymentIntent (**user is NOT charged**)\n6. Updates seat status to RESERVED\n\n### Returns:\n- Reservation details with expiry countdown\n- Stripe `clientSecret` for frontend payment UI\n\n### Idempotency:\nInclude `x-idempotency-key` header. Duplicate requests return the cached reservation.\n\n### After this call:\nThe user has 3 minutes to complete payment via Stripe. If payment is not completed,\nthe background worker will release the seat automatically.",
+        "parameters": [
+          {
+            "name": "x-idempotency-key",
+            "in": "header",
+            "description": "Idempotency key to prevent duplicate reservations",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReservationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Seat reserved successfully. Use clientSecret to complete payment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationCreatedResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "KYC not verified — user cannot reserve",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Seat is already reserved or confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to acquire lock (high contention)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reservations"
+        ]
+      }
+    },
+    "/api/reservations/{id}": {
+      "get": {
+        "operationId": "ReservationController_findById",
+        "summary": "Get reservation status",
+        "description": "Returns reservation details including real-time expiry countdown. Use this to poll reservation status.",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Reservation UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservation details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Reservation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reservations"
+        ]
+      }
+    },
+    "/api/reservations/user/{userId}": {
+      "get": {
+        "operationId": "ReservationController_findByUser",
+        "summary": "Get all reservations for a user",
+        "description": "Returns all reservations (PENDING, CONFIRMED, EXPIRED, CANCELLED) for a user, ordered by most recent.",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User reservations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationStatusResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reservations"
+        ]
+      }
+    },
+    "/api/payments/simulate": {
+      "post": {
+        "operationId": "PaymentController_simulatePayment",
+        "summary": "🧪 Simulate a payment callback (dev only)",
+        "description": "**Development-only endpoint** that simulates a Stripe webhook.\n\nUse this to test the full reservation flow without real Stripe integration.\n\n### Steps:\n1. Call `POST /api/reservations` to reserve a seat → get `stripePaymentIntentId`\n2. Call this endpoint with the PaymentIntent ID\n3. Set `success: true` to simulate successful payment\n4. Set `success: false` to simulate failed payment\n\nOnly available when Stripe key contains \"simulated\".",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulatePaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Simulated payment processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Simulation not available in production mode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "payments"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Jameya Marketplace API",
+    "description": "",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Jameya Marketplace Team",
+      "url": "https://github.com/jameya-marketplace",
+      "email": "team@jameya.io"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "tags": [
+    {
+      "name": "marketplace",
+      "description": "Browse and discover Jameyas with personalized ranking"
+    },
+    {
+      "name": "jameyas",
+      "description": "Create and manage Jameya savings groups"
+    },
+    {
+      "name": "seats",
+      "description": "View and manage seats within Jameyas"
+    },
+    {
+      "name": "reservations",
+      "description": "Reserve seats with 2-phase confirmation flow"
+    },
+    {
+      "name": "payments",
+      "description": "Process payments and handle Stripe webhooks"
+    },
+    {
+      "name": "users",
+      "description": "User management, KYC verification, and risk profiling"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development"
+    },
+    {
+      "url": "https://api.jameya.io",
+      "description": "Production (placeholder)"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          },
+          "email": {
+            "type": "string",
+            "example": "alice@example.com"
+          },
+          "name": {
+            "type": "string",
+            "example": "Alice Johnson"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+1234567001"
+          },
+          "kycStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "VERIFIED",
+              "REJECTED",
+              "EXPIRED"
+            ],
+            "example": "VERIFIED"
+          },
+          "riskScore": {
+            "type": "number",
+            "example": 15,
+            "description": "0-100 scale, lower = less risky"
+          },
+          "behaviorScore": {
+            "type": "number",
+            "example": 85,
+            "description": "0-100 scale, higher = better"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-01-15T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "kycStatus",
+          "riskScore",
+          "behaviorScore",
+          "createdAt"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 409
+          },
+          "error": {
+            "type": "string",
+            "example": "ConflictException"
+          },
+          "message": {
+            "type": "string",
+            "example": "Seat is not available. Current status: RESERVED"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-01-15T10:30:00.000Z"
+          },
+          "path": {
+            "type": "string",
+            "example": "/api/reservations"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "timestamp",
+          "path"
+        ]
+      },
+      "UpdateKycDto": {
+        "type": "object",
+        "properties": {
+          "kycStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "VERIFIED",
+              "REJECTED",
+              "EXPIRED"
+            ]
+          }
+        },
+        "required": [
+          "kycStatus"
+        ]
+      },
+      "KycEligibilityResponse": {
+        "type": "object",
+        "properties": {
+          "eligible": {
+            "type": "boolean",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "VERIFIED",
+              "REJECTED",
+              "EXPIRED"
+            ],
+            "example": "VERIFIED"
+          },
+          "reason": {
+            "type": "string",
+            "example": "KYC verification is pending."
+          }
+        },
+        "required": [
+          "eligible",
+          "status"
+        ]
+      },
+      "MarketplaceJameyaResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "jameya-uuid-456"
+          },
+          "name": {
+            "type": "string",
+            "example": "Gold Savings Circle"
+          },
+          "monthlyContribution": {
+            "type": "number",
+            "example": 500
+          },
+          "duration": {
+            "type": "number",
+            "example": 12
+          },
+          "totalSeats": {
+            "type": "number",
+            "example": 12
+          },
+          "availableSeats": {
+            "type": "number",
+            "example": 4
+          },
+          "fillPercentage": {
+            "type": "number",
+            "example": 67
+          },
+          "score": {
+            "type": "number",
+            "example": 142.5,
+            "description": "Ranking score"
+          },
+          "badges": {
+            "example": [
+              "Featured",
+              "Only 4 seats left!"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "minJoiningPrice": {
+            "type": "number",
+            "example": 4200
+          },
+          "maxJoiningPrice": {
+            "type": "number",
+            "example": 6000
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "monthlyContribution",
+          "duration",
+          "totalSeats",
+          "availableSeats",
+          "fillPercentage",
+          "score",
+          "badges",
+          "minJoiningPrice",
+          "maxJoiningPrice"
+        ]
+      },
+      "MarketplaceResponse": {
+        "type": "object",
+        "properties": {
+          "jameyas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketplaceJameyaResponse"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 150
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "example": 20
+          },
+          "totalPages": {
+            "type": "number",
+            "example": 8
+          }
+        },
+        "required": [
+          "jameyas",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "SeatSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "seat-uuid-123"
+          },
+          "seatNumber": {
+            "type": "number",
+            "example": 1
+          },
+          "joiningPrice": {
+            "type": "number",
+            "example": 6000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "RESERVED",
+              "CONFIRMED"
+            ],
+            "example": "AVAILABLE"
+          }
+        },
+        "required": [
+          "id",
+          "seatNumber",
+          "joiningPrice",
+          "status"
+        ]
+      },
+      "JameyaStatsResponse": {
+        "type": "object",
+        "properties": {
+          "totalSeats": {
+            "type": "number",
+            "example": 12
+          },
+          "availableSeats": {
+            "type": "number",
+            "example": 4
+          },
+          "reservedSeats": {
+            "type": "number",
+            "example": 2
+          },
+          "confirmedSeats": {
+            "type": "number",
+            "example": 6
+          },
+          "fillPercentage": {
+            "type": "number",
+            "example": 67,
+            "description": "Percentage of seats taken"
+          }
+        },
+        "required": [
+          "totalSeats",
+          "availableSeats",
+          "reservedSeats",
+          "confirmedSeats",
+          "fillPercentage"
+        ]
+      },
+      "JameyaDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "jameya-uuid-456"
+          },
+          "name": {
+            "type": "string",
+            "example": "Gold Savings Circle"
+          },
+          "description": {
+            "type": "string",
+            "example": "Premium savings group for verified members"
+          },
+          "monthlyContribution": {
+            "type": "number",
+            "example": 500
+          },
+          "duration": {
+            "type": "number",
+            "example": 12
+          },
+          "currency": {
+            "type": "string",
+            "example": "USD"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "FULL",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "seats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeatSummary"
+            }
+          },
+          "stats": {
+            "$ref": "#/components/schemas/JameyaStatsResponse"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "monthlyContribution",
+          "duration",
+          "currency",
+          "status",
+          "seats",
+          "stats"
+        ]
+      },
+      "CreateReservationDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "User ID making the reservation"
+          },
+          "seatId": {
+            "type": "string",
+            "description": "Seat ID to reserve"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Client-generated idempotency key to prevent duplicate reservations",
+            "example": "res_abc123_seat456"
+          }
+        },
+        "required": [
+          "userId",
+          "seatId",
+          "idempotencyKey"
+        ]
+      },
+      "ReservationPaymentInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "payment-uuid-789"
+          },
+          "amount": {
+            "type": "number",
+            "example": 6000
+          },
+          "currency": {
+            "type": "string",
+            "example": "USD"
+          },
+          "stripeClientSecret": {
+            "type": "string",
+            "example": "pi_simulated_abc123_secret_xyz789",
+            "description": "Stripe client secret for frontend"
+          },
+          "stripePaymentIntentId": {
+            "type": "string",
+            "example": "pi_simulated_abc123"
+          }
+        },
+        "required": [
+          "id",
+          "amount",
+          "currency",
+          "stripeClientSecret",
+          "stripePaymentIntentId"
+        ]
+      },
+      "ReservationCreatedResponse": {
+        "type": "object",
+        "properties": {
+          "reservation": {
+            "type": "object",
+            "description": "Reservation details",
+            "example": {
+              "id": "reservation-uuid-123",
+              "seatId": "seat-uuid-456",
+              "status": "PENDING",
+              "expiresAt": "2026-01-15T10:33:00.000Z",
+              "ttlSeconds": 180
+            }
+          },
+          "payment": {
+            "$ref": "#/components/schemas/ReservationPaymentInfo"
+          }
+        },
+        "required": [
+          "reservation",
+          "payment"
+        ]
+      },
+      "ReservationStatusResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "reservation-uuid-123"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "EXPIRED",
+              "CANCELLED"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-01-15T10:33:00.000Z"
+          },
+          "isExpired": {
+            "type": "boolean",
+            "example": false
+          },
+          "remainingSeconds": {
+            "type": "number",
+            "example": 145,
+            "description": "Seconds remaining before expiry"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "expiresAt",
+          "isExpired",
+          "remainingSeconds"
+        ]
+      },
+      "SimulatePaymentDto": {
+        "type": "object",
+        "properties": {
+          "paymentIntentId": {
+            "type": "string",
+            "example": "pi_simulated_abc123def456",
+            "description": "PaymentIntent ID returned from the reservation step"
+          },
+          "success": {
+            "type": "boolean",
+            "example": true,
+            "description": "true = payment succeeded, false = payment failed"
+          }
+        },
+        "required": [
+          "paymentIntentId",
+          "success"
+        ]
+      },
+      "WebhookResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failed",
+              "already_processed",
+              "unhandled"
+            ]
+          },
+          "paymentId": {
+            "type": "string",
+            "example": "payment-uuid-789"
+          },
+          "reservationId": {
+            "type": "string",
+            "example": "reservation-uuid-123"
+          },
+          "reservation": {
+            "type": "object",
+            "description": "Reservation confirmation result",
+            "example": {
+              "status": "confirmed",
+              "reservationId": "reservation-uuid-123"
+            }
+          }
+        },
+        "required": [
+          "status"
+        ]
+      }
+    }
+  }
+}
