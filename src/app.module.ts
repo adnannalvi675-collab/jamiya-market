@@ -21,14 +21,21 @@ import { PaymentModule } from './modules/payment/payment.module';
     // BullMQ for background jobs
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        connection: {
-          host: configService.get('REDIS_HOST', 'localhost'),
-          port: configService.get('REDIS_PORT', 6379),
-          password: configService.get('REDIS_PASSWORD'),
-          username: configService.get('REDIS_USER', 'default'),
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get('REDIS_URL');
+        if (redisUrl) {
+          return { connection: redisUrl };
+        }
+        return {
+          connection: {
+            host: configService.get('REDIS_HOST', 'localhost'),
+            port: configService.get('REDIS_PORT', 6379),
+            password: configService.get('REDIS_PASSWORD'),
+            username: configService.get('REDIS_USER', 'default'),
+            tls: configService.get('REDIS_HOST')?.includes('proxy') ? {} : undefined,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
 

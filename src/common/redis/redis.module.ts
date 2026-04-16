@@ -12,12 +12,13 @@ import { REDIS_CLIENT } from './redis.constants';
     {
       provide: REDIS_CLIENT,
       useFactory: (configService: ConfigService) => {
-        return new Redis({
+        return new Redis(configService.get('REDIS_URL') || {
           host: configService.get('REDIS_HOST', 'localhost'),
           port: configService.get('REDIS_PORT', 6379),
           password: configService.get('REDIS_PASSWORD'),
           username: configService.get('REDIS_USER', 'default'),
-          maxRetriesPerRequest: null, // Required for BullMQ compatibility
+          tls: configService.get('REDIS_HOST')?.includes('proxy') ? {} : undefined,
+          maxRetriesPerRequest: null,
           enableReadyCheck: false,
         });
       },
