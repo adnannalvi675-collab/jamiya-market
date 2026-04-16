@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 
-// is it woked
+// it is working
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, {
