@@ -61,9 +61,10 @@ export class ReservationService {
     private readonly paymentService: PaymentService,
     private readonly configService: ConfigService,
   ) {
-    // Hardcoded reservation TTL: 3 minutes (180 seconds)
-    this.reservationTtlSeconds = 180;
-    this.logger.log(`Reservation TTL set to ${this.reservationTtlSeconds} seconds`);
+    this.reservationTtlSeconds = this.configService.get(
+      'RESERVATION_TTL_SECONDS',
+      180, // 3 minutes default
+    );
   }
 
   // ==========================================================================

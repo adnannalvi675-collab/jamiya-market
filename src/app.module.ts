@@ -23,10 +23,10 @@ import { PaymentModule } from './modules/payment/payment.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         connection: {
-          host: configService.get('REDIS_HOST', 'localhost'),
-          port: configService.get('REDIS_PORT', 6379),
-          password: configService.get('REDIS_PASSWORD'),
-          username: configService.get('REDIS_USER', 'default'),
+          host: 'nozomi.proxy.rlwy.net',
+          port: 51015,
+          password: 'vRusskOLSRJLfEijjgfziCVOXSqJQUgD',
+          username: 'default',
         },
       }),
       inject: [ConfigService],
