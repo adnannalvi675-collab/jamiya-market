@@ -15,6 +15,8 @@ import { REDIS_CLIENT } from './redis.constants';
         return new Redis({
           host: configService.get('REDIS_HOST', 'localhost'),
           port: configService.get('REDIS_PORT', 6379),
+          password: configService.get('REDIS_PASSWORD'),
+          username: configService.get('REDIS_USER', 'default'),
           maxRetriesPerRequest: null, // Required for BullMQ compatibility
           enableReadyCheck: false,
         });
