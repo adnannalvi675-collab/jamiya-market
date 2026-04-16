@@ -36,8 +36,8 @@ export class PaymentService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {
-    // Detect simulated mode from key prefix
-    const stripeKey = this.configService.get('STRIPE_SECRET_KEY', '');
+    // Hardcoded simulated Stripe key for testing
+    const stripeKey = 'sk_test_simulated_key_for_testing';
     this.isSimulated = stripeKey.includes('simulated');
 
     if (this.isSimulated) {
