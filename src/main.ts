@@ -6,6 +6,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import * as fs from 'fs';
 import * as path from 'path';
 
+
+// is it woked
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, {
