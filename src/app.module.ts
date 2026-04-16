@@ -24,15 +24,16 @@ import { PaymentModule } from './modules/payment/payment.module';
       useFactory: (configService: ConfigService) => {
         const redisUrl = configService.get('REDIS_URL');
         if (redisUrl) {
+          console.log(`[BullModule] Using REDIS_URL for connection`);
           return { connection: redisUrl };
         }
+        console.log(`[BullModule] Using individual Redis config (fallback)`);
         return {
           connection: {
             host: configService.get('REDIS_HOST', 'localhost'),
             port: configService.get('REDIS_PORT', 6379),
             password: configService.get('REDIS_PASSWORD'),
             username: configService.get('REDIS_USER', 'default'),
-            tls: configService.get('REDIS_HOST')?.includes('proxy') ? {} : undefined,
           },
         };
       },

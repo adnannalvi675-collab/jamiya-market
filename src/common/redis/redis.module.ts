@@ -14,16 +14,22 @@ import { REDIS_CLIENT } from './redis.constants';
       useFactory: (configService: ConfigService) => {
         const logger = new Logger('RedisModule');
         const redisUrl = configService.get('REDIS_URL');
+        const redisHost = configService.get('REDIS_HOST');
+        const redisPort = configService.get('REDIS_PORT');
+        
+        logger.log(`REDIS_URL: ${redisUrl}`);
+        logger.log(`REDIS_HOST: ${redisHost}`);
+        logger.log(`REDIS_PORT: ${redisPort}`);
         
         let redis: Redis;
         if (redisUrl) {
-          logger.log('Connecting to Redis using URL');
+          logger.log(`✅ Using REDIS_URL: ${redisUrl}`);
           redis = new Redis(redisUrl);
         } else {
-          logger.log('Connecting to Redis using individual config');
+          logger.warn(`⚠️ REDIS_URL not found, using fallback config: ${redisHost}:${redisPort}`);
           redis = new Redis({
-            host: configService.get('REDIS_HOST', 'localhost'),
-            port: configService.get('REDIS_PORT', 6379),
+            host: redisHost || 'localhost',
+            port: redisPort || 6379,
             password: configService.get('REDIS_PASSWORD'),
             username: configService.get('REDIS_USER', 'default'),
             maxRetriesPerRequest: null,
