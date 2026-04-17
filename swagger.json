@@ -688,7 +688,7 @@
       "description": "Local Development"
     },
     {
-      "url": "https://api.jameya.io",
+      "url": "https://jamiya-market-production.up.railway.app/",
       "description": "Production (placeholder)"
     }
   ],

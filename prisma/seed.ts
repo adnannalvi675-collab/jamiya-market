@@ -289,16 +289,16 @@ async function main() {
   console.log('📊 Summary:');
   console.log(`  Users: ${users.length}`);
   console.log(`  Jameyas: ${jameyas.length}`);
-  console.log(`  Total seats: ${jameyaConfigs.reduce((sum, j) => sum + j.duration, 0)}`);
+  console.log(`  Total seats: ${await prisma.seat.count()}`);
   console.log('\n📋 Test users:');
   users.forEach((u) => {
     console.log(`  ${u.name} (${u.email}) — KYC: ${u.kycStatus}, Risk: ${u.riskScore}`);
   });
-  console.log('\n🏦 Jameyas:');
-  jameyas.forEach((j, idx) => {
-    const config = jameyaConfigs[idx];
-    console.log(`  ${j.name} — $${config.monthlyContribution}/mo × ${config.duration}mo`);
+  console.log('\n🏦 Featured Jameyas:');
+  jameyas.filter(j => j.isFeatured).forEach((j) => {
+    console.log(`  ${j.name} — $${j.monthlyContribution}/mo × ${j.duration}mo`);
   });
+  console.log(`  ... and ${jameyas.length - jameyas.filter(j => j.isFeatured).length} other Jameyas.`);
 }
 
 main()
