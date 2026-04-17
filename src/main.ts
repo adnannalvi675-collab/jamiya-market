@@ -74,7 +74,7 @@ async function bootstrap() {
     )
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
     .addServer('http://localhost:3000', 'Local Development')
-    .addServer('https://api.jameya.io', 'Production (placeholder)')
+    .addServer('https://jamiya-market-production.up.railway.app', 'Production (placeholder)')
     .addTag('marketplace', 'Browse and discover Jameyas with personalized ranking')
     .addTag('jameyas', 'Create and manage Jameya savings groups')
     .addTag('seats', 'View and manage seats within Jameyas')

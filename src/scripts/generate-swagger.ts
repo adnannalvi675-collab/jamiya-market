@@ -89,7 +89,7 @@ seat reservations, and payments.
     },
     servers: [
       { url: 'http://localhost:3000', description: 'Local Development' },
-      { url: 'https://api.jameya.io', description: 'Production (placeholder)' },
+      { url: 'https://jamiya-market-production.up.railway.app', description: 'Production (placeholder)' },
     ],
     tags: [
       { name: 'marketplace', description: 'Browse and discover Jameyas with personalized ranking' },
